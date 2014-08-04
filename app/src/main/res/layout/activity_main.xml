@@ -19,14 +19,17 @@
         android:layout_weight="0.2"
         android:orientation="vertical">
         <ImageButton
+            android:id="@+id/bttnCircle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:src="@drawable/circle" />
         <ImageButton
+            android:id="@+id/bttnRectangle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:src="@drawable/rectangle"/>
         <ImageButton
+            android:id="@+id/bttnTriangle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:src="@drawable/triangle"/>
