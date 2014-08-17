@@ -15,9 +15,9 @@ public class ShapeFactory {
             if (type.equals(ShapeType.RECTANGLE)) {
                 shapeImpl = new Rectangle();
             } else if (type.equals(ShapeType.CIRCLE)) {
-                //shapeImpl = new Oval(false);
+                shapeImpl = new Circle();
             } else if (type.equals(ShapeType.TRIANGLE)) {
-                //shapeImpl = new Line();
+                shapeImpl = new Triangle();
             }
             shapes.put(type, shapeImpl);
         }

@@ -1,5 +1,6 @@
 package enrique.tpapatterndesign;
 
+import android.graphics.Color;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.GestureDetector;
@@ -7,11 +8,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
+import memento.CareTaker;
+import memento.Memento;
+import memento.Originator;
 import shapes.Shape;
 import shapes.ShapeFactory;
+import tools.Generator;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -19,11 +25,17 @@ public class MainActivity extends ActionBarActivity {
     private RelativeLayout mFrame;
     int mDisplayWidth;
     int mDisplayHeight;
-    GestureDetector mGestureDetector;
-    ImageButton bttnRectangle;
-    ImageButton bttnCircle;
-    ImageButton bttnTriangle;
-    int whatShape=0;
+    private GestureDetector mGestureDetector;
+    private ImageButton bttnRectangle;
+    private ImageButton bttnCircle;
+    private ImageButton bttnTriangle;
+    private  Originator mOriginator = new Originator();
+    private CareTaker aCaretaker = new CareTaker();
+    private Button bttnUndo;
+    private int currentState = 0;
+
+
+    int whatShape=-1;
 
     private static final ShapeFactory.ShapeType shapes[] = { ShapeFactory.ShapeType.RECTANGLE,
             ShapeFactory.ShapeType.CIRCLE, ShapeFactory.ShapeType.TRIANGLE };
@@ -36,24 +48,46 @@ public class MainActivity extends ActionBarActivity {
         bttnCircle = (ImageButton) findViewById(R.id.bttnCircle);
         bttnRectangle = (ImageButton) findViewById(R.id.bttnRectangle);
         bttnTriangle = (ImageButton) findViewById(R.id.bttnTriangle);
+        bttnUndo = (Button) findViewById(R.id.bttnUndo);
+
         bttnCircle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                whatShape = 1; //circulo
+                whatShape = 1; //
             }
         });
         bttnRectangle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                whatShape = 2;
+                whatShape = 0;
             }
         });
         bttnTriangle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                whatShape = 3;
+                whatShape = 2;
             }
         });
+        bttnUndo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //mOriginator.getStateFromMemento(aCaretaker.get(0));
+                //mFrame = mOriginator.getState();
+
+
+                if(currentState == 0){
+                    return ;
+                }
+                currentState--;
+
+                reDrawLayout();
+
+            }
+        });
+
+        //mOriginator.setState(mFrame,getApplicationContext());
+        //aCaretaker.add(mOriginator.save2Memento());
+
         setupGestureDetector();
     }
 
@@ -109,29 +143,34 @@ public class MainActivity extends ActionBarActivity {
                         // You can get all Views in mFrame using the
                         // ViewGroup.getChildCount() method
 
-                        /*
-                        for (int i=0;i<mFrame.getChildCount();i++){
-                            BubbleView tmpBubbleView =(BubbleView) mFrame.getChildAt(i);
-                            if (tmpBubbleView.intersects(event.getX(), event.getY())){
-                                tmpBubbleView.stop(true);
-                                return false;
-                            }
-
+                        if(whatShape == -1){
+                            return false;
                         }
 
-                        BubbleView mBubbleView = new BubbleView(getApplicationContext(),event.getX() ,event.getY());
-                        mFrame.addView(mBubbleView);
-
-                        mBubbleView.start();
-                        */
-                        Shape myShape = ShapeFactory.getShape(shapes[0]);
-                        myShape.draw(mFrame,event.getX(),event.getY(),getApplicationContext());
 
 
+
+                        Shape myShape = ShapeFactory.getShape(shapes[whatShape]);
+                        int aColor = Generator.generateColor();
+                        int aWidth = Generator.generateWidth();
+
+
+
+                        myShape.draw(mFrame,event.getX(),event.getY(),aWidth, aColor,getApplicationContext());
+
+                        mOriginator.setState(mFrame.getChildAt(mFrame.getChildCount()-1)); //agregando el ultimo view que inserte al frame
+                        Memento currentMemento = mOriginator.save2Memento(); //guardar estado
+
+                        aCaretaker.add(currentMemento,currentState); //guargar a la lista de estados
+
+                        currentState++;
                         return false;
                     }
                 });
     }
+
+
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
@@ -141,5 +180,12 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
+    public void reDrawLayout(){
+        mFrame.removeAllViews();
+        for (int i = 0 ; i< currentState;i++){
+            mFrame.addView(aCaretaker.get(i).getState());
+        }
+        aCaretaker.get(currentState).switchUndone(); //le pongo flag en undone = true, al ultimo que hice undo
+    }
 
 }
