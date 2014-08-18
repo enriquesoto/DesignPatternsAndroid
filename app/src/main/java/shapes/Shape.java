@@ -14,4 +14,5 @@ public interface Shape{
     public void draw(RelativeLayout mFrame, final float x,final float y, final Context aContext);
     public void setColor(int aColor);
     public void setWidth(int width);
+
 }

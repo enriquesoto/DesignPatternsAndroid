@@ -50,6 +50,11 @@ public class MainActivity extends ActionBarActivity {
     private SoundPool mSoundPool;
     // ID for the bubble popping sound
     private int mSoundID;
+    //speeed mode
+    public final static int RANDOM = 0;
+    public static int speedMode = RANDOM;
+    public final static int SINGLE = 1;
+    public final static int STILL = 2;
 
 
     int whatShape=-1;
@@ -182,6 +187,35 @@ public class MainActivity extends ActionBarActivity {
 
                     // If a fling gesture starts on a BubbleView then change the
                     // BubbleView's velocity
+                    @Override
+                    public boolean onFling(MotionEvent event1, MotionEvent event2,
+                                           float velocityX, float velocityY) {
+
+                        float xPos = event1.getX();
+                        float yPos = event1.getY()-YOFFSET;
+                        if(whatShape == -1){
+                            return false;
+                        }
+
+                        // TODO - Implement onFling actions.
+                        // You can get all Views in mFrame using the
+                        // ViewGroup.getChildCount() method
+                        for (int i=0;i<mFrame.getChildCount();i++){
+                            ShapeView myViewTmp =(ShapeView) mFrame.getChildAt(i);
+                            if(myViewTmp.intersects(xPos,yPos) ){
+                                myViewTmp.deflect(velocityX, velocityY);
+                                return false;
+                            }
+
+                        }
+
+
+
+                        return false;
+
+                    }
+
+
 
                     // If a single tap intersects a BubbleView, then pop the BubbleView
                     // Otherwise, create a new BubbleView at the tap's location and add
@@ -229,6 +263,7 @@ public class MainActivity extends ActionBarActivity {
 
                         myShape.draw(mFrame,xPos,yPos,getApplicationContext());
                         mSoundPool.play(mSoundID, (float)mStreamVolume , (float)mStreamVolume, 1, 0,1.0f);
+
 
 
                         mOriginator.setState(mFrame.getChildAt(mFrame.getChildCount()-1)); //agregando el ultimo view que inserte al frame
