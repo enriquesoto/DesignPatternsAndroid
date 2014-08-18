@@ -12,48 +12,77 @@ import android.widget.RelativeLayout;
  * Created by enrique on 04/08/14.
  */
 public class Triangle implements Shape{
+
+
+    private Paint myColor = new Paint();
+    private float width;
+
+
+    Triangle(int initColor, float width){
+        this.myColor.setColor(initColor);
+        //this.myColor.setAntiAlias(true);
+        myColor.setStyle(Paint.Style.FILL_AND_STROKE);
+        this.width =(float) width;
+    }
+
+
     @Override
-    public void draw(RelativeLayout mFrame, final float x, final float y,
-                     final float width,final int color, Context aContext) {
+    public void draw(RelativeLayout mFrame, final float x, final float y, Context aContext) {
+
+        mFrame.addView(new TriangleView(aContext,x,y));
+
+    }
+    @Override
+    public void setColor(int aColor){
+        this.myColor.setColor(aColor);
+    }
+    @Override
+    public void setWidth(int width){
+        this.width = (float) width;
+    }
+
+    public class TriangleView extends View implements ShapeView{
+
+        private float mXPos, mYPos, mDx, mDy;
 
 
+        public TriangleView(Context context, float x, float y) {
+            super(context);
+            this.mXPos = x;
+            this.mYPos = y;
+        }
+        @Override
+        public synchronized boolean intersects(float x, float y) {
 
+            // TODO - Return true if the BubbleView intersects position (x,y)
 
-        mFrame.addView(new View(aContext){
-            public float xPos;
-            public float yPos;
+            if(x>mXPos && x<mXPos+width*2 && y>mYPos && y<mYPos+width*2)
+                return true;
 
-            final Paint mPainter = new android.graphics.Paint();
-            @Override
-            protected synchronized void onDraw(Canvas canvas) {
-                //canvas.drawPaint(mPainter);
-                mPainter.setStyle(Paint.Style.FILL_AND_STROKE);
+            return false;
+        }
+        @Override
+        protected synchronized void onDraw(Canvas canvas) {
 
-                mPainter.setColor(color);
-                mPainter.setStyle(Paint.Style.FILL_AND_STROKE);
+            //Log.i("xd","Creating Circle at: x:" + x + "xpos" + xPos + " y:"+y+"ypos" + yPos);
 
-                mPainter.setAntiAlias(true);
-                xPos = x;
-                yPos=y-110;
-                Point a = new Point((int)(xPos-width/2),(int)(yPos-width/2));
-                Point b = new Point((int)(xPos-width/2),(int) (yPos+width/2));
-                Point c = new Point((int)(xPos+width/2), (int)(yPos+width/2));
+            Point a = new Point((int)(mXPos-width/2),(int)(mYPos-width/2));
+            Point b = new Point((int)(mXPos-width/2),(int) (mYPos+width/2));
+            Point c = new Point((int)(mXPos+width/2), (int)(mYPos+width/2));
 
-                //canvas.drawBitmap(mBitmap,x-widthRect/2,y-widthRect/2,mPainter);
-                //canvas.drawCircle(x - width, y + width / 2, width/2, mPainter);
+            //canvas.drawBitmap(mBitmap,x-widthRect/2,y-widthRect/2,mPainter);
+            //canvas.drawCircle(x - width, y + width / 2, width/2, mPainter);
 
-                Path path = new Path();
-                path.setFillType(Path.FillType.EVEN_ODD);
-                path.lineTo(b.x, b.y);
-                path.lineTo(c.x, c.y);
-                path.lineTo(a.x, a.y);
-                path.lineTo(b.x, b.y);
-                path.close();
+            Path path = new Path();
+            path.setFillType(Path.FillType.EVEN_ODD);
+            path.lineTo(b.x, b.y);
+            path.lineTo(c.x, c.y);
+            path.lineTo(a.x, a.y);
+            path.lineTo(b.x, b.y);
+            path.close();
 
-                canvas.drawPath(path, mPainter);
+            canvas.drawPath(path, myColor);
 
-            }
-        });
-
+        }
     }
 }

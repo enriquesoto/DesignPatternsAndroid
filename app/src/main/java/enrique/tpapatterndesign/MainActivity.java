@@ -1,8 +1,11 @@
 package enrique.tpapatterndesign;
 
 import android.graphics.Color;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -11,16 +14,23 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
+
+import java.util.HashMap;
 
 import memento.CareTaker;
 import memento.Memento;
 import memento.Originator;
 import shapes.Shape;
 import shapes.ShapeFactory;
+import shapes.ShapeView;
 import tools.Generator;
 
 
 public class MainActivity extends ActionBarActivity {
+
+    private static final float YOFFSET = 100;
+    private final static int MAX_STREAMS = 10; //mio
 
     private RelativeLayout mFrame;
     int mDisplayWidth;
@@ -33,12 +43,25 @@ public class MainActivity extends ActionBarActivity {
     private CareTaker aCaretaker = new CareTaker();
     private Button bttnUndo;
     private int currentState = 0;
+    private final int duration = Toast.LENGTH_SHORT;
+    private AudioManager mAudioManager;
+    private float mStreamVolume;
+    // SoundPool
+    private SoundPool mSoundPool;
+    // ID for the bubble popping sound
+    private int mSoundID;
 
 
     int whatShape=-1;
 
     private static final ShapeFactory.ShapeType shapes[] = { ShapeFactory.ShapeType.RECTANGLE,
             ShapeFactory.ShapeType.CIRCLE, ShapeFactory.ShapeType.TRIANGLE };
+
+    private HashMap<String,Integer> shapeMapping = new HashMap<String, Integer>();
+
+    private final String CIRCLECLASS= "shapes.Circle$CircleView";
+    private final String RECTANGLECLASS= "shapes.Rectangle$RectangleView";
+    private final String TRIANGLECLASS= "shapes.Triangle$TriangleView";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +72,10 @@ public class MainActivity extends ActionBarActivity {
         bttnRectangle = (ImageButton) findViewById(R.id.bttnRectangle);
         bttnTriangle = (ImageButton) findViewById(R.id.bttnTriangle);
         bttnUndo = (Button) findViewById(R.id.bttnUndo);
+        shapeMapping.put(CIRCLECLASS,1);
+        shapeMapping.put(RECTANGLECLASS,0);
+        shapeMapping.put(TRIANGLECLASS,2);
+
 
         bttnCircle.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,7 +115,7 @@ public class MainActivity extends ActionBarActivity {
         //mOriginator.setState(mFrame,getApplicationContext());
         //aCaretaker.add(mOriginator.save2Memento());
 
-        setupGestureDetector();
+
     }
 
 
@@ -123,6 +150,30 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
+    @Override
+    public void onResume(){
+        super.onResume();
+
+        mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+        mStreamVolume = (float) mAudioManager
+                .getStreamVolume(AudioManager.STREAM_MUSIC)
+                / mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+
+        mSoundPool = new SoundPool(MAX_STREAMS, AudioManager.STREAM_MUSIC,0);
+
+
+        mSoundPool.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() { // sellama cuando el sonido se carga totalmente
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId,
+                                       int status) {
+                if (status == 0)
+                    setupGestureDetector();
+            }
+        });
+        mSoundID = mSoundPool.load(this, R.raw.bubble_pop,1);
+
+    }
+
     private void setupGestureDetector() {
 
         mGestureDetector = new GestureDetector(this,
@@ -142,34 +193,55 @@ public class MainActivity extends ActionBarActivity {
                         // TODO - Implement onSingleTapConfirmed actions.
                         // You can get all Views in mFrame using the
                         // ViewGroup.getChildCount() method
-
+                        float xPos = event.getX();
+                        float yPos = event.getY()-YOFFSET;
                         if(whatShape == -1){
                             return false;
+                        }
+
+                        Shape myShape = ShapeFactory.getShape(shapes[whatShape]);
+
+                        for (int i=0;i<mFrame.getChildCount();i++){
+                            ShapeView myViewTmp = (ShapeView) mFrame.getChildAt(i);
+                            /*
+                            Log.i("posicion","xpos(evento)="+xPos +"ypos(evento) = " + yPos + "x view = "+
+                                    myViewTmp.getX()+"y view =" + myViewTmp.getY() + "ancho =" +myViewTmp.getWidth());
+                                    */
+
+                            if(myViewTmp.intersects(xPos,yPos) ){
+                                CharSequence text = "estas en la posicion" + myViewTmp.getClass().getName();
+                                Log.i("REFLECTION",myViewTmp.getClass().getName());
+                                Toast toast = Toast.makeText(getApplicationContext(),text,duration);
+                                toast.show();
+                                int index = shapeMapping.get(myViewTmp.getClass().getName());
+                                myShape = ShapeFactory.getShape(shapes[index]);
+                                myShape.setColor(Generator.generateColor());
+                                myShape.setWidth(Generator.randInt(ShapeFactory.MINWIDTH,ShapeFactory.MAXWIDTH));
+                                reDrawLayout();
+                                return true;
+                            }
+
                         }
 
 
 
 
-                        Shape myShape = ShapeFactory.getShape(shapes[whatShape]);
-                        int aColor = Generator.generateColor();
-                        int aWidth = Generator.generateWidth();
 
+                        myShape.draw(mFrame,xPos,yPos,getApplicationContext());
+                        mSoundPool.play(mSoundID, (float)mStreamVolume , (float)mStreamVolume, 1, 0,1.0f);
 
-
-                        myShape.draw(mFrame,event.getX(),event.getY(),aWidth, aColor,getApplicationContext());
 
                         mOriginator.setState(mFrame.getChildAt(mFrame.getChildCount()-1)); //agregando el ultimo view que inserte al frame
                         Memento currentMemento = mOriginator.save2Memento(); //guardar estado
 
-                        aCaretaker.add(currentMemento,currentState); //guargar a la lista de estados
+                        aCaretaker.add(currentMemento, currentState); //guargar a la lista de estados
 
                         currentState++;
+
                         return false;
                     }
                 });
     }
-
-
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -185,7 +257,7 @@ public class MainActivity extends ActionBarActivity {
         for (int i = 0 ; i< currentState;i++){
             mFrame.addView(aCaretaker.get(i).getState());
         }
-        aCaretaker.get(currentState).switchUndone(); //le pongo flag en undone = true, al ultimo que hice undo
+        //aCaretaker.get(currentState).switchUndone(); //le pongo flag en undone = true, al ultimo que hice undo
     }
 
 }

@@ -17,29 +17,58 @@ import enrique.tpapatterndesign.R;
  */
 public class Rectangle implements Shape {
 
-    Bitmap mBitmap;
+
+    private Paint myColor = new Paint();
+
+    private float width;
+
+    Rectangle(int initColor,float width){
+        this.myColor.setColor(initColor);
+        this.width = width;
+    }
+
+
     @Override
-    public void draw(RelativeLayout mFrame, final float x, final float y,
-                     final float width,final int color, Context aContext) {
+    public void draw(RelativeLayout mFrame, final float x, final float y, Context aContext) {
+
+        mFrame.addView(new RectangleView(aContext,x,y));
+    }
+    @Override
+    public void setColor(int aColor){
+        this.myColor.setColor(aColor);
+    }
+    @Override
+    public void setWidth(int width){
+        this.width=(float)width;
+    }
+
+    public class RectangleView extends View implements ShapeView{
+
+        private float mXPos, mYPos, mDx, mDy;
 
 
+        public RectangleView(Context context,float x,float y) {
+            super(context);
 
-        mFrame.addView(new View(aContext){
+            this.mXPos = x;
+            this.mYPos = y;
+        }
+        @Override
+        public synchronized boolean intersects(float x, float y) {
 
-            final Paint mPainter = new Paint();
-            public float xPos;
-            public float yPos;
-            @Override
-            protected synchronized void onDraw(Canvas canvas) {
-                //canvas.drawBitmap(mBitmap,x-widthRect/2,y-widthRect/2,mPainter);
-                mPainter.setColor(color);
+            // TODO - Return true if the BubbleView intersects position (x,y)
 
-                mPainter.setAntiAlias(true);
+            if(x>mXPos && x<mXPos+width*2 && y>mYPos && y<mYPos+width/2)
+                return true;
 
-                xPos = x;
-                yPos=y-110;
-                canvas.drawRect(xPos-width,yPos-width/2,xPos+width,yPos+width/2,mPainter);
-            }
-        });
+            return false;
+        }
+        @Override
+        protected synchronized void onDraw(Canvas canvas) {
+
+            canvas.drawRect(mXPos-width,mYPos-width/2,mXPos+width,mYPos+width/2,myColor);
+
+            //Log.i("xd","Creating Circle at: x:" + x + "xpos" + xPos + " y:"+y+"ypos" + yPos);
+        }
     }
 }
